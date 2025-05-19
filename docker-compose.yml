@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  polizas-db:
+    image: postgres:15
+    container_name: polizas-db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: polizas_user
+      POSTGRES_PASSWORD: polizas_password
+      POSTGRES_DB: polizas_db
+    volumes:
+      - polizas-db-data:/var/lib/postgresql/data
+    networks:
+      - polizas-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U polizas_user -d polizas_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  polizas-api:
+    build:
+      context: ./polizas-api
+      dockerfile: Dockerfile
+    container_name: polizas-api
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://polizas-db:5432/polizas_db
+      SPRING_DATASOURCE_USERNAME: polizas_user
+      SPRING_DATASOURCE_PASSWORD: polizas_password
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      polizas-db:
+        condition: service_healthy
+    networks:
+      - polizas-network
+
+  polizas-app:
+    build:
+      context: ./polizas-app
+      dockerfile: Dockerfile
+    container_name: polizas-app
+    restart: always
+    ports:
+      - "3000:80"  # Cambiado de 80:80 a 3000:80
+    depends_on:
+      - polizas-api
+    networks:
+      - polizas-network
+
+networks:
+  polizas-network:
+    driver: bridge
+
+volumes:
+  polizas-db-data:
