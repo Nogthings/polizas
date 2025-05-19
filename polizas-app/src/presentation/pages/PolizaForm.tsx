@@ -38,7 +38,9 @@ const PolizaForm: React.FC = () => {
   const createPolizaMutation = useMutation({
     mutationFn: (poliza: PolizaRequest) => polizaUseCases.createPoliza(poliza),
     onSuccess: () => {
+      // Invalidar la caché para polizas e inventario para que ambos se actualicen
       queryClient.invalidateQueries({ queryKey: ['polizas'] });
+      queryClient.invalidateQueries({ queryKey: ['inventario'] });
       navigate('/polizas');
     },
   });
@@ -51,6 +53,13 @@ const PolizaForm: React.FC = () => {
       navigate('/polizas');
     },
   });
+  
+  // Actualizar los datos de inventario cuando se regresa al formulario
+  useEffect(() => {
+    if (!isEditMode) {
+      queryClient.invalidateQueries({ queryKey: ['inventario'] });
+    }
+  }, [isEditMode, queryClient]);
   
   // Esquema de validación con Yup
   const validationSchema = Yup.object({
@@ -128,6 +137,13 @@ const PolizaForm: React.FC = () => {
     }
   }, [isEditMode, poliza]);
   
+  // Efecto para mostrar stock actualizado al cambiar el artículo seleccionado
+  useEffect(() => {
+    if (formik.values.sku && formik.touched.sku) {
+      queryClient.invalidateQueries({ queryKey: ['inventario'] });
+    }
+  }, [formik.values.sku, formik.touched.sku, queryClient]);
+  
   // Renderizado del formulario
   const isLoading = isLoadingPoliza || isLoadingEmpleados || isLoadingInventario || loadingDetails;
   const isSaving = createPolizaMutation.isPending || updatePolizaMutation.isPending;
@@ -182,7 +198,13 @@ const PolizaForm: React.FC = () => {
               id="sku"
               name="sku"
               value={formik.values.sku}
-              onChange={formik.handleChange}
+              onChange={(e) => {
+                formik.handleChange(e);
+                // Al cambiar el artículo seleccionado, refrescar los datos de inventario
+                if (e.target.value) {
+                  queryClient.invalidateQueries({ queryKey: ['inventario'] });
+                }
+              }}
               onBlur={formik.handleBlur}
               error={formik.touched.sku && formik.errors.sku ? formik.errors.sku : ''}
               options={
