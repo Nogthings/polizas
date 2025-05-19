@@ -54,3 +54,10 @@ export interface ApiResponse<T> {
   };
   data: T;
 }
+
+export interface PaginatedResponse<T> {
+  content: T[];
+  currentPage: number;
+  totalItems: number;
+  totalPages: number;
+}

@@ -8,6 +8,7 @@ import {
   PolizaResponse,
   Inventario,
   Empleado,
+  PaginatedResponse,
 } from "@core/domain/entities";
 
 // Poliza Use Cases
@@ -37,6 +38,22 @@ export const polizaUseCases = {
 export const inventarioUseCases = {
   getAllInventario: async (): Promise<Inventario[]> => {
     return inventarioRepository.getAll();
+  },
+
+  getPaginatedInventario: async (
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = "sku",
+    sortDir: string = "asc",
+    search?: string
+  ): Promise<PaginatedResponse<Inventario>> => {
+    return inventarioRepository.getPaginated(
+      page,
+      size,
+      sortBy,
+      sortDir,
+      search
+    );
   },
 
   getInventarioItem: async (sku: number): Promise<Inventario> => {

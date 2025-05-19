@@ -6,6 +6,7 @@ import {
   MensajeResponse,
   PolizaRequest,
   PolizaResponse,
+  PaginatedResponse,
 } from "@core/domain/entities";
 
 export const polizaRepository = {
@@ -55,6 +56,25 @@ export const inventarioRepository = {
     const response = await apiClient.get<ApiResponse<Inventario[]>>(
       "/inventario"
     );
+    return response.data.data;
+  },
+
+  getPaginated: async (
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = "sku",
+    sortDir: string = "asc",
+    search?: string
+  ): Promise<PaginatedResponse<Inventario>> => {
+    let url = `/inventario/paginated?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`;
+
+    if (search) {
+      url += `&nombre=${encodeURIComponent(search)}`;
+    }
+
+    const response = await apiClient.get<
+      ApiResponse<PaginatedResponse<Inventario>>
+    >(url);
     return response.data.data;
   },
 

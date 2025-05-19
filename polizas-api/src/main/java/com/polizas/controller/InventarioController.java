@@ -1,5 +1,6 @@
 package com.polizas.controller;
 
+import com.polizas.dto.PageResponseDto;
 import com.polizas.dto.ResponseDto;
 import com.polizas.model.Inventario;
 import com.polizas.repository.InventarioRepository;
@@ -8,6 +9,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +40,43 @@ public class InventarioController {
             log.error("Error al obtener la lista de inventario", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseDto.failure("Error al consultar el inventario"));
+        }
+    }
+
+    @GetMapping("/paginated")
+    @Operation(summary = "Obtener inventario paginado", description = "Devuelve una página de artículos en inventario")
+    public ResponseEntity<ResponseDto<PageResponseDto<Inventario>>> obtenerPaginado(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "sku") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) String nombre) {
+        try {
+            log.info("Obteniendo página {} de inventario, tamaño: {}", page, size);
+
+            Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            Page<Inventario> pageResult;
+
+            if (nombre != null && !nombre.isEmpty()) {
+                pageResult = inventarioRepository.findByNombreContainingIgnoreCase(nombre, pageable);
+            } else {
+                pageResult = inventarioRepository.findAll(pageable);
+            }
+
+            PageResponseDto<Inventario> pageResponse = PageResponseDto.<Inventario>builder()
+                    .content(pageResult.getContent())
+                    .currentPage(pageResult.getNumber())
+                    .totalItems(pageResult.getTotalElements())
+                    .totalPages(pageResult.getTotalPages())
+                    .build();
+
+            return ResponseEntity.ok(ResponseDto.success(pageResponse));
+        } catch (Exception e) {
+            log.error("Error al obtener la lista paginada de inventario", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDto.failure("Error al consultar el inventario paginado"));
         }
     }
 
