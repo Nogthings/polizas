@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormik } from 'formik';
@@ -14,13 +14,14 @@ const PolizaForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const isEditing = id !== 'nueva';
+  const isEditMode = id !== undefined && id !== 'nueva';
+  const [loadingDetails, setLoadingDetails] = useState(false);
   
   // Consultas para obtener datos necesarios
   const { data: poliza, isLoading: isLoadingPoliza } = useQuery({
     queryKey: ['poliza', id],
     queryFn: () => polizaUseCases.getPolizaById(Number(id)),
-    enabled: isEditing,
+    enabled: isEditMode,
   });
   
   const { data: empleados, isLoading: isLoadingEmpleados } = useQuery({
@@ -53,9 +54,9 @@ const PolizaForm: React.FC = () => {
   
   // Esquema de validación con Yup
   const validationSchema = Yup.object({
-    idPoliza: Yup.number()
-      .required('El ID de la póliza es requerido')
-      .positive('El ID debe ser un número positivo'),
+    idPoliza: isEditMode 
+      ? Yup.number().required('El ID de la póliza es requerido') 
+      : Yup.number().notRequired(),
     empleadoGenero: Yup.number()
       .required('El empleado es requerido')
       .positive('Debe seleccionar un empleado'),
@@ -70,7 +71,7 @@ const PolizaForm: React.FC = () => {
         'La cantidad excede el inventario disponible',
         function(value) {
           // Solo validamos stock en creación, no en edición
-          if (isEditing) return true;
+          if (isEditMode) return true;
           
           const sku = this.parent.sku;
           const articulo = inventario?.find(item => item.sku === Number(sku));
@@ -79,27 +80,33 @@ const PolizaForm: React.FC = () => {
       ),
   });
   
+  // Valores iniciales para el formulario
+  const initialValues = {
+    idPoliza: isEditMode ? '' : '',
+    empleadoGenero: '',
+    sku: '',
+    cantidad: '',
+  };
+  
   // Configuración del formulario con Formik
   const formik = useFormik({
-    initialValues: {
-      idPoliza: '',
-      empleadoGenero: '',
-      sku: '',
-      cantidad: '',
-    },
+    initialValues,
     validationSchema,
+    enableReinitialize: true,
     onSubmit: (values) => {
       const polizaData: PolizaRequest = {
-        idPoliza: Number(values.idPoliza),
         empleadoGenero: Number(values.empleadoGenero),
         sku: Number(values.sku),
         cantidad: Number(values.cantidad),
       };
       
-      if (isEditing) {
+      if (isEditMode) {
         updatePolizaMutation.mutate({
           id: Number(id),
-          poliza: polizaData,
+          poliza: {
+            ...polizaData,
+            idPoliza: Number(values.idPoliza),
+          },
         });
       } else {
         createPolizaMutation.mutate(polizaData);
@@ -109,25 +116,27 @@ const PolizaForm: React.FC = () => {
   
   // Efecto para cargar datos iniciales en edición
   useEffect(() => {
-    if (isEditing && poliza) {
+    if (isEditMode && poliza) {
+      setLoadingDetails(true);
       formik.setValues({
         idPoliza: poliza.poliza.idPoliza.toString(),
-        empleadoGenero: poliza.empleado ? poliza.empleado.nombre : '',
+        empleadoGenero: poliza.empleado ? poliza.poliza.idPoliza.toString() : '',
         sku: poliza.detalleArticulo ? poliza.detalleArticulo.sku.toString() : '',
         cantidad: poliza.poliza.cantidad.toString(),
       });
+      setLoadingDetails(false);
     }
-  }, [isEditing, poliza]);
+  }, [isEditMode, poliza]);
   
   // Renderizado del formulario
-  const isLoading = isLoadingPoliza || isLoadingEmpleados || isLoadingInventario;
+  const isLoading = isLoadingPoliza || isLoadingEmpleados || isLoadingInventario || loadingDetails;
   const isSaving = createPolizaMutation.isPending || updatePolizaMutation.isPending;
   
   return (
     <MainLayout>
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          {isEditing ? 'Editar Póliza' : 'Crear Nueva Póliza'}
+          {isEditMode ? 'Editar Póliza' : 'Crear Nueva Póliza'}
         </h1>
         
         {isLoading ? (
@@ -136,17 +145,19 @@ const PolizaForm: React.FC = () => {
           </div>
         ) : (
           <form onSubmit={formik.handleSubmit} className="bg-white shadow rounded-lg p-6">
-            <Input
-              label="ID de Póliza"
-              type="number"
-              id="idPoliza"
-              name="idPoliza"
-              value={formik.values.idPoliza}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={formik.touched.idPoliza && formik.errors.idPoliza ? formik.errors.idPoliza : ''}
-              disabled={isEditing}
-            />
+            {isEditMode && (
+              <Input
+                label="ID de Póliza"
+                type="number"
+                id="idPoliza"
+                name="idPoliza"
+                value={formik.values.idPoliza}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.idPoliza && formik.errors.idPoliza ? formik.errors.idPoliza : ''}
+                disabled={true}
+              />
+            )}
             
             <Select
               label="Empleado"
@@ -182,7 +193,7 @@ const PolizaForm: React.FC = () => {
                     }))
                   : []
               }
-              disabled={isEditing}
+              disabled={isEditMode}
             />
             
             <Input
@@ -194,7 +205,7 @@ const PolizaForm: React.FC = () => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               error={formik.touched.cantidad && formik.errors.cantidad ? formik.errors.cantidad : ''}
-              disabled={isEditing}
+              disabled={isEditMode}
             />
             
             <div className="mt-6 flex justify-end space-x-3">
@@ -211,7 +222,7 @@ const PolizaForm: React.FC = () => {
                 isLoading={isSaving}
                 disabled={!formik.isValid || isSaving}
               >
-                {isEditing ? 'Actualizar' : 'Crear'} Póliza
+                {isEditMode ? 'Actualizar' : 'Crear'} Póliza
               </Button>
             </div>
           </form>

@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -83,14 +82,18 @@ public class PolizaService {
                 inventario.setCantidad(inventario.getCantidad() - polizaRequestDto.getCantidad());
                 inventarioRepository.save(inventario);
 
-                // Crear póliza
+                // Crear póliza - No asignamos ID, dejamos que se genere automáticamente
                 Poliza poliza = Poliza.builder()
-                                .idPoliza(polizaRequestDto.getIdPoliza())
                                 .empleadoGenero(polizaRequestDto.getEmpleadoGenero())
                                 .sku(polizaRequestDto.getSku())
                                 .cantidad(polizaRequestDto.getCantidad())
                                 .fecha(LocalDateTime.now())
                                 .build();
+
+                // Si el DTO tiene un ID y es una operación de creación explícita, lo usamos
+                if (polizaRequestDto.getIdPoliza() != null) {
+                        poliza.setIdPoliza(polizaRequestDto.getIdPoliza());
+                }
 
                 polizaRepository.save(poliza);
 

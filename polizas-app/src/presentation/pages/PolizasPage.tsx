@@ -36,13 +36,12 @@ const PolizasPage: React.FC = () => {
   };
   
   const handleDelete = (id: number) => {
+    setSelectedPoliza(id);
     if (window.confirm('¿Está seguro de eliminar esta póliza?')) {
       deletePolizaMutation.mutate(id);
+    } else {
+      setSelectedPoliza(null);
     }
-  };
-  
-  const handleViewDetails = (id: number) => {
-    navigate(`/polizas/${id}`);
   };
   
   // Renderizado de la lista de pólizas
@@ -100,13 +99,6 @@ const PolizasPage: React.FC = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end space-x-2">
-                    <Button 
-                      variant="secondary" 
-                      size="sm"
-                      onClick={() => handleViewDetails(poliza.poliza.idPoliza)}
-                    >
-                      Ver
-                    </Button>
                     <Button 
                       variant="primary" 
                       size="sm"

@@ -15,10 +15,10 @@ const AppRouter: React.FC = () => {
       <Route path="/polizas/editar/:id" element={<PolizaForm />} />
       
       {/* Rutas de Inventario */}
-      {/* Implementar cuando sean necesarias */}
+      {/* <Route path="/inventario" element={<Navigate to="/" replace />} /> */}
       
       {/* Rutas de Empleados */}
-      {/* Implementar cuando sean necesarias */}
+      {/* <Route path="/empleados" element={<Navigate to="/" replace />} /> */}
       
       {/* Redirección para rutas no encontradas */}
       <Route path="*" element={<Navigate to="/" replace />} />
