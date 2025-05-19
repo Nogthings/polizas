@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class Empleado {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_empleado", nullable = false, unique = true)
     private Long idEmpleado;
 

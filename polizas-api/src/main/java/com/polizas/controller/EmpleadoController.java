@@ -57,7 +57,13 @@ public class EmpleadoController {
     @Operation(summary = "Crear un nuevo empleado", description = "Crea un nuevo empleado en la base de datos")
     public ResponseEntity<ResponseDto<Empleado>> crear(@Valid @RequestBody Empleado empleado) {
         try {
+            log.info("Creando empleado: {}", empleado);
+            // El ID será generado automáticamente si es null o 0
+            if (empleado.getIdEmpleado() != null && empleado.getIdEmpleado() == 0) {
+                empleado.setIdEmpleado(null);
+            }
             Empleado nuevoEmpleado = empleadoRepository.save(empleado);
+            log.info("Empleado creado con éxito: {}", nuevoEmpleado);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ResponseDto.success(nuevoEmpleado));
         } catch (Exception e) {

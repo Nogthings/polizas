@@ -1,6 +1,6 @@
 -- Crear secuencia si no existe
 CREATE SEQUENCE IF NOT EXISTS polizas_id_poliza_seq
-    START WITH 100  -- Empezar desde un número alto para evitar conflictos con los datos existentes
+    START WITH 100
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
