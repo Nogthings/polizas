@@ -10,9 +10,9 @@ import PolizaForm from '@presentation/pages/PolizaForm';
 import EmpleadosPage from '@presentation/pages/EmpleadosPage';
 import EmpleadoForm from '@presentation/pages/EmpleadoForm';
 
-// Páginas de Inventario (a implementar)
-// import InventarioPage from '@presentation/pages/InventarioPage';
-// import InventarioForm from '@presentation/pages/InventarioForm';
+// Páginas de Inventario
+import InventarioPage from '@presentation/pages/InventarioPage';
+import InventarioForm from '@presentation/pages/InventarioForm';
 
 const AppRouter: React.FC = () => {
   return (
@@ -30,9 +30,9 @@ const AppRouter: React.FC = () => {
       <Route path="/empleados/editar/:id" element={<EmpleadoForm />} />
       
       {/* Rutas de Inventario */}
-      {/* <Route path="/inventario" element={<InventarioPage />} /> */}
-      {/* <Route path="/inventario/nuevo" element={<InventarioForm />} /> */}
-      {/* <Route path="/inventario/editar/:sku" element={<InventarioForm />} /> */}
+      <Route path="/inventario" element={<InventarioPage />} />
+      <Route path="/inventario/nuevo" element={<InventarioForm />} />
+      <Route path="/inventario/editar/:sku" element={<InventarioForm />} />
       
       {/* Redirección para rutas no encontradas */}
       <Route path="*" element={<Navigate to="/" replace />} />
