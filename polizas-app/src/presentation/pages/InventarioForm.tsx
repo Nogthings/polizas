@@ -8,11 +8,13 @@ import Button from '@presentation/components/Button';
 import Input from '@presentation/components/Input';
 import { inventarioUseCases } from '@core/application/useCases';
 import { Inventario } from '@core/domain/entities';
+import { useToastNotification } from '@core/infrastructure/toast/ToastSystem';
 
 const InventarioForm: React.FC = () => {
   const { sku } = useParams<{ sku: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToastNotification();
   const isEditMode = sku !== undefined && sku !== 'nuevo';
   const [loadingDetails, setLoadingDetails] = useState(false);
   
@@ -28,8 +30,12 @@ const InventarioForm: React.FC = () => {
     mutationFn: (inventario: Inventario) => inventarioUseCases.createInventarioItem(inventario),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventario'] });
+      toast.success('Artículo creado exitosamente');
       navigate('/inventario');
     },
+    onError: (error) => {
+      toast.error(`Error al crear el artículo: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
   });
   
   const updateInventarioMutation = useMutation({
@@ -37,8 +43,12 @@ const InventarioForm: React.FC = () => {
       inventarioUseCases.updateInventarioItem(sku, inventario),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventario'] });
+      toast.success('Artículo actualizado exitosamente');
       navigate('/inventario');
     },
+    onError: (error) => {
+      toast.error(`Error al actualizar el artículo: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
   });
   
   // Esquema de validación con Yup
@@ -156,7 +166,12 @@ const InventarioForm: React.FC = () => {
               <Button 
                 type="button" 
                 variant="secondary"
-                onClick={() => navigate('/inventario')}
+                onClick={() => {
+                  if (formik.dirty && !window.confirm('¿Está seguro que desea cancelar? Los cambios no guardados se perderán.')) {
+                    return;
+                  }
+                  navigate('/inventario');
+                }}
               >
                 Cancelar
               </Button>

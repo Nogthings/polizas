@@ -5,11 +5,13 @@ import MainLayout from '@presentation/layouts/MainLayout';
 import Button from '@presentation/components/Button';
 import { polizaUseCases } from '@core/application/useCases';
 import { PolizaResponse } from '@core/domain/entities';
+import { useToastNotification } from '@core/infrastructure/toast/ToastSystem';
 
 const PolizasPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedPoliza, setSelectedPoliza] = useState<number | null>(null);
+  const toast = useToastNotification();
   
   // Consulta para obtener todas las pólizas
   const { data: polizas, isLoading, isError } = useQuery({
@@ -23,7 +25,12 @@ const PolizasPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['polizas'] });
       setSelectedPoliza(null);
+      toast.success(`Póliza eliminada exitosamente`);
     },
+    onError: (error) => {
+      toast.error(`Error al eliminar la póliza: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setSelectedPoliza(null);
+    }
   });
   
   // Manejadores de eventos

@@ -8,11 +8,13 @@ import Button from '@presentation/components/Button';
 import Input from '@presentation/components/Input';
 import { empleadoUseCases } from '@core/application/useCases';
 import { Empleado } from '@core/domain/entities';
+import { useToastNotification } from '@core/infrastructure/toast/ToastSystem';
 
 const EmpleadoForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToastNotification();
   const isEditMode = id !== undefined && id !== 'nuevo';
   const [loadingDetails, setLoadingDetails] = useState(false);
   
@@ -28,8 +30,12 @@ const EmpleadoForm: React.FC = () => {
     mutationFn: (empleado: Empleado) => empleadoUseCases.createEmpleado(empleado),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['empleados'] });
+      toast.success('Empleado creado exitosamente');
       navigate('/empleados');
     },
+    onError: (error) => {
+      toast.error(`Error al crear el empleado: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
   });
   
   const updateEmpleadoMutation = useMutation({
@@ -37,8 +43,12 @@ const EmpleadoForm: React.FC = () => {
       empleadoUseCases.updateEmpleado(id, empleado),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['empleados'] });
+      toast.success('Empleado actualizado exitosamente');
       navigate('/empleados');
     },
+    onError: (error) => {
+      toast.error(`Error al actualizar el empleado: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
   });
   
   // Esquema de validación con Yup

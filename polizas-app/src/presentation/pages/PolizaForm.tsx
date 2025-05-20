@@ -9,11 +9,13 @@ import Input from '@presentation/components/Input';
 import Select from '@presentation/components/Select';
 import { polizaUseCases, empleadoUseCases, inventarioUseCases } from '@core/application/useCases';
 import { PolizaRequest } from '@core/domain/entities';
+import { useToastNotification } from '@core/infrastructure/toast/ToastSystem';
 
 const PolizaForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToastNotification();
   const isEditMode = id !== undefined && id !== 'nueva';
   const [loadingDetails, setLoadingDetails] = useState(false);
   
@@ -41,8 +43,12 @@ const PolizaForm: React.FC = () => {
       // Invalidar la caché para polizas e inventario para que ambos se actualicen
       queryClient.invalidateQueries({ queryKey: ['polizas'] });
       queryClient.invalidateQueries({ queryKey: ['inventario'] });
+      toast.success('Póliza creada exitosamente');
       navigate('/polizas');
     },
+    onError: (error) => {
+      toast.error(`Error al crear la póliza: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
   });
   
   const updatePolizaMutation = useMutation({
@@ -50,8 +56,12 @@ const PolizaForm: React.FC = () => {
       polizaUseCases.updatePoliza(id, poliza),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['polizas'] });
+      toast.success('Póliza actualizada exitosamente');
       navigate('/polizas');
     },
+    onError: (error) => {
+      toast.error(`Error al actualizar la póliza: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    }
   });
   
   // Actualizar los datos de inventario cuando se regresa al formulario

@@ -5,11 +5,13 @@ import MainLayout from '@presentation/layouts/MainLayout';
 import Button from '@presentation/components/Button';
 import { empleadoUseCases } from '@core/application/useCases';
 import { Empleado } from '@core/domain/entities';
+import { useToastNotification } from '@core/infrastructure/toast/ToastSystem';
 
 const EmpleadosPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedEmpleado, setSelectedEmpleado] = useState<number | null>(null);
+  const toast = useToastNotification();
   
   // Consulta para obtener todos los empleados
   const { data: empleados, isLoading, isError } = useQuery({
@@ -23,7 +25,12 @@ const EmpleadosPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['empleados'] });
       setSelectedEmpleado(null);
+      toast.success('Empleado eliminado exitosamente');
     },
+    onError: (error) => {
+      toast.error(`Error al eliminar el empleado: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setSelectedEmpleado(null);
+    }
   });
   
   // Manejadores de eventos

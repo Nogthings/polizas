@@ -7,11 +7,13 @@ import Pagination from '@presentation/components/Pagination';
 import SearchBar from '@presentation/components/SearchBar';
 import { inventarioUseCases } from '@core/application/useCases';
 import { Inventario } from '@core/domain/entities';
+import { useToastNotification } from '@core/infrastructure/toast/ToastSystem';
 
 const InventarioPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const toast = useToastNotification();
   
   // Estado para controlar la paginación
   const [currentPage, setCurrentPage] = useState<number>(
@@ -74,6 +76,8 @@ const InventarioPage: React.FC = () => {
         queryKey: ['inventario', 'paginated'] 
       });
       
+      toast.success('Artículo eliminado del inventario exitosamente');
+      
       // Si estamos en la última página y eliminamos el último elemento, volvemos a la página anterior
       if (data && data.content.length === 1 && currentPage > 0) {
         setCurrentPage(currentPage - 1);
@@ -83,6 +87,10 @@ const InventarioPage: React.FC = () => {
       
       setSelectedSku(null);
     },
+    onError: (error) => {
+      toast.error(`Error al eliminar el artículo: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+      setSelectedSku(null);
+    }
   });
   
   // Manejadores de eventos
@@ -110,12 +118,16 @@ const InventarioPage: React.FC = () => {
   const handleSearch = () => {
     setActiveSearch(searchTerm);
     setCurrentPage(0); // Volver a la primera página cuando se busca
+    if (searchTerm) {
+      toast.info(`Buscando: "${searchTerm}"`, 2000);
+    }
   };
   
   const handleClearSearch = () => {
     setSearchTerm('');
     setActiveSearch('');
     setCurrentPage(0);
+    toast.info('Búsqueda limpiada', 2000);
   };
   
   const handleSort = (column: string) => {

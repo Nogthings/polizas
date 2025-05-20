@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import React from 'react';
+import { ToastProvider } from '@core/infrastructure/toast/ToastSystem';
 
 // Crear una instancia del cliente de consulta
 const queryClient = new QueryClient({
@@ -21,7 +22,9 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </QueryClientProvider>
     </BrowserRouter>
   );
