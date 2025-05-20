@@ -1,41 +1,34 @@
 package com.polizas.controller;
 
 import com.polizas.dto.MensajeResponseDto;
+import com.polizas.dto.PageResponseDto;
 import com.polizas.dto.PolizaRequestDto;
 import com.polizas.dto.PolizaResponseDto;
 import com.polizas.dto.ResponseDto;
 import com.polizas.service.PolizaService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
 @RequestMapping("/polizas")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Pólizas", description = "API para la gestión de pólizas de faltantes")
 public class PolizaController {
 
     private final PolizaService polizaService;
 
     @GetMapping
     @Operation(summary = "Obtener todas las pólizas", description = "Obtiene la lista de todas las pólizas registradas")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de pólizas obtenida correctamente"),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor")
-    })
     public ResponseEntity<ResponseDto<List<PolizaResponseDto>>> obtenerTodas() {
         try {
             List<PolizaResponseDto> polizas = polizaService.obtenerTodasPolizas();
@@ -44,6 +37,34 @@ public class PolizaController {
             log.error("Error al obtener todas las pólizas", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseDto.failure("Ha ocurrido un error al consultar las pólizas."));
+        }
+    }
+
+    @GetMapping("/paginated")
+    @Operation(summary = "Obtener pólizas paginadas", description = "Obtiene una página de pólizas con filtros opcionales")
+    public ResponseEntity<ResponseDto<PageResponseDto<PolizaResponseDto>>> obtenerPaginadas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "idPoliza") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) Long empleadoId,
+            @RequestParam(required = false) Long sku) {
+        try {
+            log.info("Obteniendo página {} de pólizas, tamaño: {}", page, size);
+
+            Sort sort = sortDir.equalsIgnoreCase("desc")
+                    ? Sort.by(sortBy).descending()
+                    : Sort.by(sortBy).ascending();
+
+            Pageable pageable = PageRequest.of(page, size, sort);
+            PageResponseDto<PolizaResponseDto> result = polizaService.obtenerPolizasPaginadas(
+                    empleadoId, sku, pageable);
+
+            return ResponseEntity.ok(ResponseDto.success(result));
+        } catch (Exception e) {
+            log.error("Error al obtener pólizas paginadas", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDto.failure("Ha ocurrido un error al consultar las pólizas paginadas."));
         }
     }
 

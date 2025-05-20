@@ -17,6 +17,24 @@ export const polizaUseCases = {
     return polizaRepository.getAll();
   },
 
+  getPaginatedPolizas: async (
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = "idPoliza",
+    sortDir: string = "asc",
+    empleadoId?: number,
+    sku?: number
+  ): Promise<PaginatedResponse<PolizaResponse>> => {
+    return polizaRepository.getPaginated(
+      page,
+      size,
+      sortBy,
+      sortDir,
+      empleadoId,
+      sku
+    );
+  },
+
   getPolizaById: async (id: number): Promise<PolizaResponse> => {
     return polizaRepository.getById(id);
   },

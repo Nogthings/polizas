@@ -1,6 +1,7 @@
 package com.polizas.service;
 
 import com.polizas.dto.MensajeResponseDto;
+import com.polizas.dto.PageResponseDto;
 import com.polizas.dto.PolizaRequestDto;
 import com.polizas.dto.PolizaResponseDto;
 import com.polizas.exception.ResourceNotFoundException;
@@ -12,12 +13,15 @@ import com.polizas.repository.InventarioRepository;
 import com.polizas.repository.PolizaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +56,54 @@ public class PolizaService {
                 }
 
                 return result;
+        }
+
+        /**
+         * Obtener pólizas paginadas con filtros opcionales
+         */
+        @Transactional(readOnly = true)
+        public PageResponseDto<PolizaResponseDto> obtenerPolizasPaginadas(
+                        Long empleadoId, Long sku, Pageable pageable) {
+                log.info("Obteniendo pólizas paginadas - Página: {}, Tamaño: {}, EmpleadoID: {}, SKU: {}",
+                                pageable.getPageNumber(), pageable.getPageSize(), empleadoId, sku);
+
+                // Obtener la página de pólizas según los filtros
+                Page<Poliza> polizasPage;
+                if (empleadoId != null && sku != null) {
+                        polizasPage = polizaRepository.findByFilters(empleadoId, sku, pageable);
+                } else if (empleadoId != null) {
+                        polizasPage = polizaRepository.findByEmpleadoGenero(empleadoId, pageable);
+                } else if (sku != null) {
+                        polizasPage = polizaRepository.findBySku(sku, pageable);
+                } else {
+                        polizasPage = polizaRepository.findAll(pageable);
+                }
+
+                // Convertir las pólizas a DTOs
+                List<PolizaResponseDto> polizasDto = polizasPage.getContent().stream()
+                                .map(poliza -> {
+                                        Empleado empleado = empleadoRepository
+                                                        .findByIdEmpleado(poliza.getEmpleadoGenero())
+                                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                                        "Empleado no encontrado con ID: "
+                                                                                        + poliza.getEmpleadoGenero()));
+
+                                        Inventario inventario = inventarioRepository.findBySku(poliza.getSku())
+                                                        .orElseThrow(() -> new ResourceNotFoundException(
+                                                                        "Artículo no encontrado con SKU: "
+                                                                                        + poliza.getSku()));
+
+                                        return buildPolizaResponse(poliza, empleado, inventario);
+                                })
+                                .collect(Collectors.toList());
+
+                // Construir y devolver el DTO de respuesta paginada
+                return PageResponseDto.<PolizaResponseDto>builder()
+                                .content(polizasDto)
+                                .currentPage(polizasPage.getNumber())
+                                .totalItems(polizasPage.getTotalElements())
+                                .totalPages(polizasPage.getTotalPages())
+                                .build();
         }
 
         /**

@@ -17,6 +17,30 @@ export const polizaRepository = {
     return response.data.data;
   },
 
+  getPaginated: async (
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = "idPoliza",
+    sortDir: string = "asc",
+    empleadoId?: number,
+    sku?: number
+  ): Promise<PaginatedResponse<PolizaResponse>> => {
+    let url = `/polizas/paginated?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`;
+
+    if (empleadoId) {
+      url += `&empleadoId=${empleadoId}`;
+    }
+
+    if (sku) {
+      url += `&sku=${sku}`;
+    }
+
+    const response = await apiClient.get<
+      ApiResponse<PaginatedResponse<PolizaResponse>>
+    >(url);
+    return response.data.data;
+  },
+
   getById: async (id: number): Promise<PolizaResponse> => {
     const response = await apiClient.get<ApiResponse<PolizaResponse>>(
       `/polizas/${id}`
