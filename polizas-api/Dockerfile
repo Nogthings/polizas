@@ -15,7 +15,7 @@ RUN ./mvnw dependency:go-offline -B
 COPY src src
 
 # Construir la aplicación
-RUN ./mvnw package -DskipTests
+RUN ./mvnw package -DskipTests -Pproduction
 
 # Imagen final
 FROM eclipse-temurin:21-jre
@@ -26,7 +26,7 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Definir variables de entorno para Flyway
-ENV SPRING_PROFILES_ACTIVE=docker
+ENV SPRING_PROFILES_ACTIVE=azure
 
 # Definir punto de entrada
 ENTRYPOINT ["java", "-jar", "app.jar"]
