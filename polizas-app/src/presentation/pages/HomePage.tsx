@@ -1,7 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '@presentation/layouts/MainLayout';
+import Input from '@presentation/components/Input';
+import Button from '@presentation/components/Button';
+import { polizaUseCases } from '@core/application/useCases';
+import { useToastNotification } from '@core/infrastructure/toast/ToastSystem';
 
 const HomePage: React.FC = () => {
+  const navigate = useNavigate();
+  const toast = useToastNotification();
+  const [polizaIdSearch, setPolizaIdSearch] = useState<string>('');
+  
+  // Manejador para la búsqueda por ID
+  const handleSearchById = () => {
+    if (!polizaIdSearch || isNaN(Number(polizaIdSearch))) {
+      toast.warning('Por favor, ingrese un ID de póliza válido');
+      return;
+    }
+    
+    const id = Number(polizaIdSearch);
+    
+    // Buscar la póliza por ID
+    polizaUseCases.getPolizaById(id)
+      .then(() => {
+        // Navegar a la página de edición si se encuentra
+        navigate(`/polizas/editar/${id}`);
+        toast.success(`Póliza con ID ${id} encontrada`);
+      })
+      .catch(() => {
+        toast.error(`No se encontró una póliza con el ID ${id}`);
+      });
+  };
+  
+  // Manejador para tecla Enter
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearchById();
+    }
+  };
+
   return (
     <MainLayout>
       <div className="text-center">
@@ -10,7 +47,32 @@ const HomePage: React.FC = () => {
           Gestiona el inventario, empleados y las pólizas de faltantes de manera eficiente.
         </p>
         
+        {/* Componente de búsqueda de pólizas por ID */}
+        <div className="max-w-md mx-auto mb-12 bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4">Búsqueda Rápida de Pólizas</h2>
+          <div className="space-y-4">
+            <Input
+              label="Buscar Póliza por ID"
+              type="number"
+              id="polizaIdSearch"
+              placeholder="Ingrese ID de póliza"
+              value={polizaIdSearch}
+              onChange={(e) => setPolizaIdSearch(e.target.value)}
+              onKeyDown={handleKeyDown}
+              fullWidth
+            />
+            <Button
+              onClick={handleSearchById}
+              disabled={!polizaIdSearch}
+              fullWidth
+            >
+              Buscar Póliza
+            </Button>
+          </div>
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          {/* Los cards existentes de navegación */}
           <div className="bg-white rounded-lg shadow-md p-6 flex flex-col items-center">
             <div className="bg-primary-100 text-primary-700 p-3 rounded-full mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
